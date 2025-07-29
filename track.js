@@ -1,6 +1,6 @@
 // @ts-nocheck
 (function () {
-    const DEBUG_MODE = location.hostname === 'localhost' || location.search.includes('mdb_pixel_debug=true');
+    const DEBUG_MODE = true || location.hostname === 'localhost' || location.search.includes('mdb_pixel_debug=true');
     const PROXY_URL = 'https://proxyprovider-vhkdzfr2sq-uc.a.run.app';
 
     // Verify DEBUG_MODE immediately
@@ -45,26 +45,38 @@
         return deviceId;
     }
 
-    function loadPixel() {
-        try {
-            const deviceId = getDeviceId();
-            const payload = { deviceId };
-            if (DEBUG_MODE) console.debug('Sending pixel request to:', PROXY_URL + '/pixel', 'Payload:', payload);
-            fetch(PROXY_URL + '/pixel', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            }).then(response => {
-                if (!response.ok) {
-                    if (DEBUG_MODE) console.debug('Pixel request failed:', response.status, response.statusText, payload);
-                } else if (DEBUG_MODE) console.debug('Pixel loaded via proxy with deviceId:', deviceId);
-            }).catch(e => {
-                if (DEBUG_MODE) console.debug('Error loading pixel via proxy:', e);
-            });
-        } catch (e) {
-            if (DEBUG_MODE) console.debug('Synchronous error during pixel fetch setup:', e);
-        }
+   function loadPixel() {
+    try {
+        const deviceId = getDeviceId();
+        const payload = { deviceId };
+        if (DEBUG_MODE) console.log('Sending pixel request to:', PROXY_URL + '/pixel', 'Payload:', payload);
+        fetch(PROXY_URL + '/pixel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        }).then(response => {
+            if (DEBUG_MODE) console.log('Pixel response:', response.status, response.statusText);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.text();
+        }).then(text => {
+            if (DEBUG_MODE) console.log('Pixel response body:', text);
+            if (text && text.trim().startsWith('(function()')) {
+                const script = document.createElement('script');
+                script.textContent = text;
+                document.head.appendChild(script);
+                if (DEBUG_MODE) console.log('Pixel script injected.');
+            } else {
+                if (DEBUG_MODE) console.log('Unexpected response format:', text);
+            }
+        }).catch(e => {
+            if (DEBUG_MODE) console.log('Error loading pixel via proxy:', e);
+        });
+    } catch (e) {
+        if (DEBUG_MODE) console.log('Synchronous error during pixel fetch setup:', e);
     }
+}
 
     function trackEvent(eventSignal, details = {}) {
         if (DEBUG_MODE) console.debug('trackEvent called with signal:', eventSignal, 'Details:', details);
