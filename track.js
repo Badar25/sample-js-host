@@ -1,6 +1,6 @@
 // @ts-nocheck
 (function () {
-    const DEBUG_MODE = true || location.hostname === 'localhost' || location.search.includes('mdb_pixel_debug=true');
+    const DEBUG_MODE = location.hostname === 'localhost' || location.search.includes('mdb_pixel_debug=true');
     const PROXY_URL = 'https://proxyprovider-vhkdzfr2sq-uc.a.run.app';
 
     // Verify DEBUG_MODE immediately
